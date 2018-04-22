@@ -101,7 +101,6 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			test_accuracy = eval(net, optimizer, test_loader)
 
 		if valid_accuracy > best_accuracy:
-			global best_accuracy
 			best_accuracy = valid_accuracy
 			save_checkpoint({'layer_list': layer_list, 'state_dict': net.state_dict(),
 							  'optimizer': optimizer.state_dict()},
