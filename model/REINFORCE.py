@@ -16,13 +16,15 @@ class Policy(nn.Module):
         self.rnn_controller = nn.GRUCell(num_actions, hidden_size)
         self.rnn_decoder = nn.Linear(hidden_size, num_actions)
 
-        self.saved_log_probs = []
-        self.rewards = []
         self.gamma = gamma
-        self.initialize_hx()
+        self.reset()
 
-    def initialize_hx(self):
+    def reset(self):
+        self.rewards = []
+        self.saved_log_probs = []
         self.hx = Variable(torch.zeros(1, self.hidden_size), requires_grad=False)
+        if torch.cuda.is_available():
+            self.hx = self.hx.cuda()
 
     def forward(self, x):
         self.hx = self.rnn_controller(x, self.hx)
@@ -37,6 +39,7 @@ class Policy(nn.Module):
         return action.data[0]
 
     def finish_episode(self, baseline):
+
         R = 0
         policy_loss = []
         rewards = []
@@ -44,13 +47,14 @@ class Policy(nn.Module):
             R = r + self.gamma * R
             rewards.insert(0, R)
         rewards = torch.Tensor(rewards)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
+        if torch.cuda.is_available():
+            rewards = rewards.cuda()
+        #rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
         for log_prob, reward in zip(self.saved_log_probs, rewards):
             policy_loss.append(-log_prob * (reward-baseline))
-        optimizer.zero_grad()
         policy_loss = torch.cat(policy_loss).sum()
-        policy_loss.backward()
-        optimizer.step()
-        del policy.rewards[:]
-        del policy.saved_log_probs[:]
-        self.initialize_hx()
+
+        del self.rewards[:]
+        del self.saved_log_probs[:]
+        self.reset()
+        return policy_loss

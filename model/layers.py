@@ -19,7 +19,7 @@ LAYERS = {'conv_32_3_1': {'input_channel':None, 'output_channel':32, 'kernel_siz
 		  'pool_2_2': {'kernel_size':2, 'stride':2},
 		  'pool_3_2': {'kernel_size':3, 'stride':2},
 		  'pool_5_3': {'kernel_size':5, 'stride':3},
-		  'out': {}
+		  'z_out': {}
 		  }
 LAYERS_TYPE = list(LAYERS.keys())
 LAYERS_TYPE.sort()
