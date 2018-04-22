@@ -6,11 +6,11 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import argparse, pdb, os, copy
 
-from util.load_data import load_cifar10_data
-from util.util import displayModelSetting, save_checkpoint
-from model.build_model import Network
-from model.REINFORCE import Policy
-from model.layers import LAYERS_TYPE, NUM_LAYERS_TYPE
+from src.util.load_data import load_cifar10_data
+from src.util.util import displayModelSetting, save_checkpoint
+from src.model.build_model import Network
+from src.model.REINFORCE import Policy
+from src.model.layers import LAYERS_TYPE, NUM_LAYERS_TYPE
 
 use_cuda = torch.cuda.is_available()
 print('USE CUDA: {}'.format(use_cuda))
@@ -26,7 +26,7 @@ def parse():
 	parser.add_argument('--max-layers', default=15, type=int,
 						help='Max number of layers')
 	parser.add_argument('--alpha', default=0.7, type=float, help='Alpha')
-	parser.add_argument('--gamma', default=0.3, type=float, help='Discounting factor (gamma)')
+	parser.add_argument('--gamma', default=0.8, type=float, help='Discounting factor (gamma)')
 	parser.add_argument('-lr', '--learning_rate', default=1e-4, type=float,
 						help='Learning rate')
 	parser.add_argument('--num-episodes', default=200, type=int, help='Number of episodes')
