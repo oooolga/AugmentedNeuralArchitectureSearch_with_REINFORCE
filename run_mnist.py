@@ -33,73 +33,77 @@ def parse():
 def mnist_env(layer_list, train_loader, valid_loader, learning_rate, 
 			  test_loader=None, save_model=False):
 
-	net = Network(layer_list=layer_list, w_in=28, h_in=28, c_in=1, out_dim=10)
-	if use_cuda:
-		net.cuda()
+	try:
+		net = Network(layer_list=layer_list, w_in=28, h_in=28, c_in=1, out_dim=10)
+		if use_cuda:
+			net.cuda()
 
-	optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
+		optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 
-	def train(net, optimizer, train_loader):
-		net.train()
+		def train(net, optimizer, train_loader):
+			net.train()
 
-		for epoch_i in range(1):
-			print('|\t\t\tTrain epoch {}:'.format(epoch_i+1))
-			total_loss = 0
-			total_batch = 0
-			for batch_idx, (data, target) in enumerate(train_loader):
+			for epoch_i in range(1):
+				print('|\t\t\tTrain epoch {}:'.format(epoch_i+1))
+				total_loss = 0
+				total_batch = 0
+				for batch_idx, (data, target) in enumerate(train_loader):
+					if use_cuda:
+						data, target = data.cuda(), target.cuda()
+
+
+					data, target = Variable(data, requires_grad=False), \
+							   Variable(target, requires_grad=False)
+					optimizer.zero_grad()
+					pred = net(data)
+					loss = net.loss(pred, target)
+					total_loss += loss
+					loss.backward()
+					optimizer.step()
+					total_batch += 1
+
+				print('|\t\t\t\tAverage loss={:.4f}'.format(total_loss/float(total_batch)))
+
+
+		def eval(net, optimizer, data_loader):
+			net.eval()
+
+			total_loss, correct = 0, 0
+			total_data, total_batch = 0, 0
+
+			for batch_idx, (data, target) in enumerate(data_loader):
 				if use_cuda:
 					data, target = data.cuda(), target.cuda()
 
-
 				data, target = Variable(data, requires_grad=False), \
 						   Variable(target, requires_grad=False)
-				optimizer.zero_grad()
-				pred = net(data)
-				loss = net.loss(pred, target)
-				total_loss += loss
-				loss.backward()
-				optimizer.step()
-				total_batch += 1
 
-			print('|\t\t\t\tAverage loss={:.4f}'.format(total_loss/float(total_batch)))
+				with torch.no_grad(): # prevent memory leak
+					pred = net(data)
+					_, predicted = torch.max(pred.data, 1)
+					correct += (predicted == target.data).sum()
+					total_data += len(data)
 
+			accuracy = correct.cpu().numpy() / float(total_data)
 
-	def eval(net, optimizer, data_loader):
-		net.eval()
+			return accuracy
 
-		total_loss, correct = 0, 0
-		total_data, total_batch = 0, 0
+		train(net, optimizer, train_loader)
+		valid_accuracy = eval(net, optimizer, valid_loader)
 
-		for batch_idx, (data, target) in enumerate(data_loader):
-			if use_cuda:
-				data, target = data.cuda(), target.cuda()
+		test_accuracy = None
+		if test_loader:
+			test_accuracy = eval(net, optimizer, test_loader)
 
-			data, target = Variable(data, requires_grad=False), \
-					   Variable(target, requires_grad=False)
+		if save_model:
+			return valid_accuracy, test_accuracy, net, optimizer
+		else:
+			del net
+			del optimizer
+			return valid_accuracy, test_accuracy
 
-			with torch.no_grad(): # prevent memory leak
-				pred = net(data)
-				_, predicted = torch.max(pred.data, 1)
-				correct += (predicted == target.data).sum()
-				total_data += len(data)
-
-		accuracy = correct.cpu().numpy() / float(total_data)
-
-		return accuracy
-
-	train(net, optimizer, train_loader)
-	valid_accuracy = eval(net, optimizer, valid_loader)
-
-	test_accuracy = None
-	if test_loader:
-		test_accuracy = eval(net, optimizer, test_loader)
-
-	if save_model:
-		return valid_accuracy, test_accuracy, net, optimizer
-	else:
-		del net
-		del optimizer
-		return valid_accuracy, test_accuracy
+	except Exception:
+		return 0, 0
 
 
 if __name__ == '__main__':

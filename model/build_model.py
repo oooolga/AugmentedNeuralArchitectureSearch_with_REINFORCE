@@ -30,6 +30,9 @@ class Network(nn.Module):
 											 stride=LAYERS[layer_i]['stride']))
 				w_in, h_in = layers[-1].get_output_size(w_in, h_in)
 
+			elif 'drop' in layer_i:
+				layers.append(DropoutLayer(drop_ratio=LAYERS[layer_i]['drop_propt']))
+
 		self.net = nn.Sequential(*layers)
 		in_dim = c_in*w_in*h_in
 		self.out_in_dim = in_dim

@@ -8,22 +8,30 @@ LAYERS = {'conv_32_3_1': {'input_channel':None, 'output_channel':32, 'kernel_siz
 		  'conv_36_3_1': {'input_channel':None, 'output_channel':36, 'kernel_size':3, 'stride':1},
 		  'conv_48_3_1': {'input_channel':None, 'output_channel':48, 'kernel_size':3, 'stride':1},
 		  'conv_64_3_1': {'input_channel':None, 'output_channel':64, 'kernel_size':3, 'stride':1},
+		  'conv_128_3_1': {'input_channel':None, 'output_channel':128, 'kernel_size':3, 'stride':1},
 		  'conv_32_4_1': {'input_channel':None, 'output_channel':32, 'kernel_size':4, 'stride':1},
 		  'conv_36_4_1': {'input_channel':None, 'output_channel':36, 'kernel_size':4, 'stride':1},
 		  'conv_48_4_1': {'input_channel':None, 'output_channel':48, 'kernel_size':4, 'stride':1},
 		  'conv_64_4_1': {'input_channel':None, 'output_channel':64, 'kernel_size':4, 'stride':1},
+		  'conv_128_4_1': {'input_channel':None, 'output_channel':128, 'kernel_size':4, 'stride':1},
 		  'conv_32_5_1': {'input_channel':None, 'output_channel':32, 'kernel_size':5, 'stride':1},
 		  'conv_36_5_1': {'input_channel':None, 'output_channel':36, 'kernel_size':5, 'stride':1},
 		  'conv_48_5_1': {'input_channel':None, 'output_channel':48, 'kernel_size':5, 'stride':1},
 		  'conv_64_5_1': {'input_channel':None, 'output_channel':64, 'kernel_size':5, 'stride':1},
+		  'conv_128_5_1': {'input_channel':None, 'output_channel':128, 'kernel_size':5, 'stride':1},
+		  'pool_2_1': {'kernel_size':2, 'stride':1},
 		  'pool_2_2': {'kernel_size':2, 'stride':2},
+		  'pool_3_1': {'kernel_size':3, 'stride':1},
 		  'pool_3_2': {'kernel_size':3, 'stride':2},
 		  'pool_5_3': {'kernel_size':5, 'stride':3},
+		  'dropout_0.25': {'drop_propt': 0.25},
+		  'dropout_0.5': {'drop_propt': 0.5},
+		  'dropout_0.75': {'drop_propt': 0.75},
 		  'z_out': {}
 		  }
 LAYERS_TYPE = list(LAYERS.keys())
 LAYERS_TYPE.sort()
-NUM_LAYERS_TYPE = 16
+NUM_LAYERS_TYPE = len(LAYERS_TYPE)
 
 class ConvLayer(nn.Module):
 
