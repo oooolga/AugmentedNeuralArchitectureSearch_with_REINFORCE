@@ -26,7 +26,7 @@ def parse():
 	parser.add_argument('--max-layers', default=15, type=int,
 						help='Max number of layers')
 	parser.add_argument('--alpha', default=0.7, type=float, help='Alpha')
-	parser.add_argument('--gamma', default=0.9, type=float, help='Discounting factor (gamma)')
+	parser.add_argument('--gamma', default=0.3, type=float, help='Discounting factor (gamma)')
 	parser.add_argument('-lr', '--learning_rate', default=1e-4, type=float,
 						help='Learning rate')
 	parser.add_argument('--num-episodes', default=200, type=int, help='Number of episodes')
@@ -127,8 +127,8 @@ if __name__ == '__main__':
 
 	if os.path.isdir(args.model_dir):
 		print("{} exists!".format(args.model_dir))
-		exit()
-	os.makedirs(args.model_dir)
+	else:
+		os.makedirs(args.model_dir)
 
 	train_loader, valid_loader, test_loader = load_cifar10_data(batch_size=args.batch_size,
 															  test_batch_size=args.batch_size,

@@ -4,18 +4,13 @@ import pdb
 from torch.autograd import Variable
 import torch.nn.functional as F
 
-LAYERS = {'conv_32_3_1': {'input_channel':None, 'output_channel':32, 'kernel_size':3, 'stride':1},
-		  'conv_36_3_1': {'input_channel':None, 'output_channel':36, 'kernel_size':3, 'stride':1},
-		  'conv_48_3_1': {'input_channel':None, 'output_channel':48, 'kernel_size':3, 'stride':1},
+LAYERS = {
+		  'conv_32_3_1': {'input_channel':None, 'output_channel':32, 'kernel_size':3, 'stride':1},
 		  'conv_64_3_1': {'input_channel':None, 'output_channel':64, 'kernel_size':3, 'stride':1},
 		  'conv_128_3_1': {'input_channel':None, 'output_channel':128, 'kernel_size':3, 'stride':1},
 		  'conv_32_4_1': {'input_channel':None, 'output_channel':32, 'kernel_size':4, 'stride':1},
-		  'conv_36_4_1': {'input_channel':None, 'output_channel':36, 'kernel_size':4, 'stride':1},
-		  'conv_48_4_1': {'input_channel':None, 'output_channel':48, 'kernel_size':4, 'stride':1},
 		  'conv_64_4_1': {'input_channel':None, 'output_channel':64, 'kernel_size':4, 'stride':1},
 		  'conv_128_4_1': {'input_channel':None, 'output_channel':128, 'kernel_size':4, 'stride':1},
-		  'conv_32_5_1': {'input_channel':None, 'output_channel':32, 'kernel_size':5, 'stride':1},
-		  'conv_36_5_1': {'input_channel':None, 'output_channel':36, 'kernel_size':5, 'stride':1},
 		  'conv_48_5_1': {'input_channel':None, 'output_channel':48, 'kernel_size':5, 'stride':1},
 		  'conv_64_5_1': {'input_channel':None, 'output_channel':64, 'kernel_size':5, 'stride':1},
 		  'conv_128_5_1': {'input_channel':None, 'output_channel':128, 'kernel_size':5, 'stride':1},
@@ -27,6 +22,12 @@ LAYERS = {'conv_32_3_1': {'input_channel':None, 'output_channel':32, 'kernel_siz
 		  'dropout_0.25': {'drop_propt': 0.25},
 		  'dropout_0.5': {'drop_propt': 0.5},
 		  'dropout_0.75': {'drop_propt': 0.75},
+		  'res_32_1': {'output_channel': 32, 'stride': 1},
+		  'res_64_1': {'output_channel': 64, 'stride': 1},
+		  'res_128_1': {'output_channel': 128, 'stride': 1},
+		  'res_32_2': {'output_channel': 32, 'stride': 2},
+		  'res_64_2': {'output_channel': 64, 'stride': 2},
+		  'res_128_2': {'output_channel': 128, 'stride': 2},
 		  'z_out': {}
 		  }
 LAYERS_TYPE = list(LAYERS.keys())
@@ -101,3 +102,44 @@ class OutputLayer(nn.Module):
 
 	def forward(self, x):
 		return F.log_softmax(self.layer(x), dim=1)
+
+# Residual Block
+# ref: https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/02-intermediate/deep_residual_network/main.py
+# 3x3 Convolution
+def conv3x3(in_channels, out_channels, stride=1):
+	return nn.Conv2d(in_channels, out_channels, kernel_size=3, 
+					 stride=stride, padding=1, bias=False)
+
+class ResidualLayer(nn.Module):
+	def __init__(self, input_channel, output_channel, stride=1):
+		super(ResidualLayer, self).__init__()
+		self.conv1 = conv3x3(input_channel, output_channel, stride)
+		self.bn1 = nn.BatchNorm2d(output_channel)
+		self.relu = nn.ReLU(inplace=True)
+		self.conv2 = conv3x3(output_channel, output_channel)
+		self.bn2 = nn.BatchNorm2d(output_channel)
+		self.downsample = None
+
+		if (stride != 1) or (input_channel != output_channel):
+			self.downsample = nn.Sequential(
+				conv3x3(input_channel, output_channel, stride=stride),
+				nn.BatchNorm2d(output_channel))
+		self.stride = stride
+		
+	def forward(self, x):
+		residual = x
+		out = self.conv1(x)
+		out = self.bn1(out)
+		out = self.relu(out)
+		out = self.conv2(out)
+		out = self.bn2(out)
+		if self.downsample:
+			residual = self.downsample(x)
+		out += residual
+		out = self.relu(out)
+		return out
+
+	def get_output_size(self, h_in, w_in):
+		h_out = int((h_in)/self.stride)
+		w_out = int((w_in)/self.stride)
+		return h_out, w_out

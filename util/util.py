@@ -10,3 +10,6 @@ def displayModelSetting(layer_list):
 def save_checkpoint(state, model_name):
 	torch.save(state, model_name)
 	print('Finished saving model: {}'.format(model_name))
+
+def load_model():
+	pass
