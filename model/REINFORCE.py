@@ -46,7 +46,7 @@ class Policy(nn.Module):
         for r in self.rewards[::-1]:
             R = r + self.gamma * R
             rewards.insert(0, R)
-        rewards = torch.Tensor(rewards)
+        rewards = Variable(torch.Tensor(rewards), requires_grad=False)
         if torch.cuda.is_available():
             rewards = rewards.cuda()
         #rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
