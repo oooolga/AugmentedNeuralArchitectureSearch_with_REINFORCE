@@ -3,7 +3,7 @@ import torch.nn as nn
 import pdb
 from torch.autograd import Variable
 import torch.nn.functional as F
-from layers import *
+from .layers import *
 
 class Network(nn.Module):
 
@@ -39,3 +39,6 @@ class Network(nn.Module):
 		x = self.net(x)
 		x = x.view(-1, self.out_in_dim)
 		return self.out_layer(x)
+
+	def loss(self, out, target):
+		return F.nll_loss(out, target)
