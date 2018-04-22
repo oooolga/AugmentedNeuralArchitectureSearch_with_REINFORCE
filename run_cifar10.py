@@ -13,6 +13,7 @@ from model.REINFORCE import Policy
 from model.layers import LAYERS_TYPE, NUM_LAYERS_TYPE
 
 use_cuda = torch.cuda.is_available()
+print('USE CUDA: {}'.format(use_cuda))
 
 def parse():
 	parser = argparse.ArgumentParser()
@@ -66,7 +67,7 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 				print('|\t\t\t\tAverage loss={:.4f}'.format(total_loss/float(total_batch)))
 
 
-		def eval(net, optimizer, data_loader):
+		def eval(net, data_loader):
 			net.eval()
 
 			total_loss, correct = 0, 0
@@ -90,7 +91,9 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			return accuracy
 
 		train(net, optimizer, train_loader)
-		valid_accuracy = eval(net, optimizer, valid_loader)
+		pdb.set_trace()
+		valid_accuracy = eval(net, valid_loader)
+		pdb.set_trace()
 
 		test_accuracy = None
 		if test_loader:
@@ -101,16 +104,17 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			save_checkpoint({'layer_list': layer_list, 'state_dict': net.state_dict(),
 							  'optimizer': optimizer.state_dict()},
 							  os.path.join(model_dir, model_name+'best.pt'))
-			return valid_accuracy, test_accuracy, None, None, None
+			return valid_accuracy, test_accuracy, None
 		else:
 			del net
 			del optimizer
-			return valid_accuracy, test_accuracy, None, None, None
+			return valid_accuracy, test_accuracy, None
 
-	except Exception:
+	except Exception as e:
 		del net
 		del optimizer
-		return 0, 0, None, None, True
+		print(e)
+		return 0, 0, True
 
 
 if __name__ == '__main__':
@@ -132,7 +136,8 @@ if __name__ == '__main__':
 	optimizer = optim.Adam(params=REINFORCE_policy_net.parameters(), lr=args.learning_rate)
 
 	start_state = Variable(torch.zeros(1, NUM_LAYERS_TYPE), requires_grad=False)
-	start_state = start_state.cuda()
+	if use_cuda:
+		start_state = start_state.cuda()
 
 	all_accuracy = []
 	global best_accuracy, best_model, model_dir, model_name
@@ -150,7 +155,7 @@ if __name__ == '__main__':
 			if new_action == NUM_LAYERS_TYPE-1:
 				if layer_i == 0:
 					displayModelSetting([])
-					reward, _, _, _, failed = cifar_env([], train_loader, valid_loader,
+					reward, _, failed = cifar_env([], train_loader, valid_loader,
 														args.learning_rate)
 					print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
 					REINFORCE_policy_net.rewards.append(reward)
@@ -158,7 +163,7 @@ if __name__ == '__main__':
 
 			layer_list.append(LAYERS_TYPE[new_action])
 			displayModelSetting(layer_list)
-			reward, _, _, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
+			reward, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
 												 args.learning_rate)
 			print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
 			REINFORCE_policy_net.rewards.append(reward)
