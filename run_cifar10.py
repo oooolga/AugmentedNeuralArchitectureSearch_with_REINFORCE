@@ -15,6 +15,9 @@ from model.layers import LAYERS_TYPE, NUM_LAYERS_TYPE
 use_cuda = torch.cuda.is_available()
 print('USE CUDA: {}'.format(use_cuda))
 
+best_accuracy = 0
+best_model = None
+
 def parse():
 	parser = argparse.ArgumentParser()
 
@@ -91,15 +94,14 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			return accuracy
 
 		train(net, optimizer, train_loader)
-		pdb.set_trace()
 		valid_accuracy = eval(net, valid_loader)
-		pdb.set_trace()
 
 		test_accuracy = None
 		if test_loader:
 			test_accuracy = eval(net, optimizer, test_loader)
 
 		if valid_accuracy > best_accuracy:
+			global best_accuracy
 			best_accuracy = valid_accuracy
 			save_checkpoint({'layer_list': layer_list, 'state_dict': net.state_dict(),
 							  'optimizer': optimizer.state_dict()},
@@ -140,9 +142,7 @@ if __name__ == '__main__':
 		start_state = start_state.cuda()
 
 	all_accuracy = []
-	global best_accuracy, best_model, model_dir, model_name
-	best_accuracy = 0
-	best_model = None
+	global model_dir, model_name
 	model_dir = args.model_dir
 	model_name = args.model_name
 
