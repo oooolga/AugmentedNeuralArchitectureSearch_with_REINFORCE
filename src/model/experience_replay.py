@@ -30,8 +30,23 @@ class TreeNode:
 	def get_count(self):
 		return self.count
 
+	def __str__(self):
+		if self.value:
+			return '{}: count={}\tvalue={:.2f}'.format(self.node_name, self.count, self.value)
+		else:
+
+			return '{}'.format(self.node_name)
 
 def getExperienceTree():
 
 	root = TreeNode('root', None)
 	return root
+
+def recursivePrintTree(root, space='|'):
+	print(space+str(root))
+
+	space += '\t'
+	
+	for leaf in root.leaves.keys():
+		
+		recursivePrintTree(root.leaves[leaf], space)
