@@ -23,7 +23,7 @@ def parse():
 
 	parser.add_argument('--batch-size', default=128, type=int,
 						help='Mini-batch size')
-	parser.add_argument('--max-layers', default=15, type=int,
+	parser.add_argument('--max-layers', default=5, type=int,
 						help='Max number of layers')
 	parser.add_argument('--alpha', default=0.7, type=float, help='Alpha')
 	parser.add_argument('--gamma', default=0.3, type=float, help='Discounting factor (gamma)')
@@ -32,6 +32,7 @@ def parse():
 	parser.add_argument('--num-episodes', default=200, type=int, help='Number of episodes')
 	parser.add_argument('--model-dir', default='./saved_model', type=str, help='Directory for saved models')
 	parser.add_argument('--model-name', default='mnist_', type=str, help='Model name')
+	parser.add_argument('--save-freq', default=10, type=int, help='Save frequency')
 
 	args = parser.parse_args()
 	return args
@@ -107,7 +108,9 @@ def mnist_env(layer_list, train_loader, valid_loader, learning_rate,
 			best_accuracy = valid_accuracy
 			save_checkpoint({'layer_list': layer_list, 'state_dict': net.state_dict(),
 							  'optimizer': optimizer.state_dict()},
-							  os.path.join(model_dir, model_name+'best.pt'))
+							  os.path.join(model_dir, model_name+'reinforce_best.pt'))
+			del net
+			del optimizer
 			return valid_accuracy, test_accuracy, None
 		else:
 			del net
@@ -135,6 +138,7 @@ if __name__ == '__main__':
 															  alpha=args.alpha)
 
 	REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
+
 	if use_cuda:
 		REINFORCE_policy_net.cuda()
 	optimizer = optim.Adam(params=REINFORCE_policy_net.parameters(), lr=args.learning_rate)
@@ -176,5 +180,11 @@ if __name__ == '__main__':
 		model_loss = REINFORCE_policy_net.finish_episode(0)
 		model_loss.backward()
 		optimizer.step()
+
+		if (epi_i+1) % args.save_freq == 0:
+			save_checkpoint({'args': args,
+							 'state_dict': net.state_dict(),
+							 'optimizer': optimizer.state_dict()},
+							  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
 
 

@@ -32,6 +32,7 @@ def parse():
 	parser.add_argument('--num-episodes', default=200, type=int, help='Number of episodes')
 	parser.add_argument('--model-dir', default='./saved_model', type=str, help='Directory for saved models')
 	parser.add_argument('--model-name', default='cifar10_', type=str, help='Model name')
+	parser.add_argument('--check-memory', action='store_true', help='Flag for check memory leak')
 
 	args = parser.parse_args()
 	return args
@@ -108,6 +109,8 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			save_checkpoint({'layer_list': layer_list, 'state_dict': net.state_dict(),
 							  'optimizer': optimizer.state_dict()},
 							  os.path.join(model_dir, model_name+'best.pt'))
+			del net
+			del optimizer
 			return valid_accuracy, test_accuracy, None
 		else:
 			del net
@@ -150,6 +153,11 @@ if __name__ == '__main__':
 
 	for epi_i in range(1, args.num_episodes+1):
 		print('|\tEpisode #{}:'.format(epi_i))
+
+		if args.check_memory:
+			pid = os.getpid()
+			prev_mem = 0
+
 		layer_list = []
 		for layer_i in range(args.max_layers-1):
 			print('|\t\tArchitecture #{}:'.format(layer_i+1))
@@ -169,6 +177,13 @@ if __name__ == '__main__':
 												 args.learning_rate)
 			print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
 			REINFORCE_policy_net.rewards.append(reward)
+
+			if args.check_memory:
+				cur_mem = (int(open('/proc/%s/statm'%pid, 'r').read().split()[1])+0.0)/256
+				add_mem = cur_mem - prev_mem
+				prev_mem = cur_mem
+				print("|\t\tadded mem: %sM"%(add_mem))
+
 			if failed:
 				break
 

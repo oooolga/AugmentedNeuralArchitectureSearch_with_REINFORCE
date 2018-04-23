@@ -30,4 +30,4 @@ def load_checkpoint(model_name, w_in=32, h_in=32, c_in=3, out_dim=10):
 	else:
 		print('File {} not found.'.format(model_name))
 		raise FileNotFoundError
-	return net, optimizer
+	return layer_list, net, optimizer
