@@ -18,9 +18,8 @@ from src.model.experience_replay import getExperienceTree, TreeNode
 use_cuda = torch.cuda.is_available()
 if not use_cuda:
 	raise NotImplementedError
-
-available_devices = []
-if use_cuda:
+else:
+	available_devices = []
 	torch.cuda.empty_cache()
 	available_devices  = list(range(torch.cuda.device_count()))
 

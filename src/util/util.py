@@ -47,7 +47,7 @@ def load_reinforce_model(model_name):
 
 		REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
 		if torch.cuda.is_available():
-			REINFORCE_policy_net = net.cuda()
+			REINFORCE_policy_net = REINFORCE_policy_net.cuda()
 
 		optimizer = optim.Adam(params=REINFORCE_policy_net.parameters(), lr=1e-4)
 
