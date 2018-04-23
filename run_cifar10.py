@@ -33,6 +33,7 @@ def parse():
 	parser.add_argument('--model-dir', default='./saved_model', type=str, help='Directory for saved models')
 	parser.add_argument('--model-name', default='cifar10_', type=str, help='Model name')
 	parser.add_argument('--check-memory', action='store_true', help='Flag for check memory leak')
+	parser.add_argument('--save-freq', default=10, type=int, help='Save frequency')
 
 	args = parser.parse_args()
 	return args
@@ -191,5 +192,11 @@ if __name__ == '__main__':
 		model_loss = REINFORCE_policy_net.finish_episode(0)
 		model_loss.backward()
 		optimizer.step()
+
+		if (epi_i+1) % args.save_freq == 0:
+			save_checkpoint({'args': args,
+							 'state_dict': REINFORCE_policy_net.state_dict(),
+							 'optimizer': optimizer.state_dict()},
+							  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
 
 

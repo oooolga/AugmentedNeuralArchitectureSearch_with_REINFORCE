@@ -183,7 +183,7 @@ if __name__ == '__main__':
 
 		if (epi_i+1) % args.save_freq == 0:
 			save_checkpoint({'args': args,
-							 'state_dict': net.state_dict(),
+							 'state_dict': REINFORCE_policy_net.state_dict(),
 							 'optimizer': optimizer.state_dict()},
 							  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
 
