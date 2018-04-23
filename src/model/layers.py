@@ -140,6 +140,6 @@ class ResidualLayer(nn.Module):
 		return out
 
 	def get_output_size(self, h_in, w_in):
-		h_out = int((h_in)/self.stride)
-		w_out = int((w_in)/self.stride)
+		h_out = int((h_in-1)/self.stride+1)
+		w_out = int((w_in-1)/self.stride+1)
 		return h_out, w_out
