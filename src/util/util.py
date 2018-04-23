@@ -58,12 +58,16 @@ def load_reinforce_model(model_name):
 		epi_i = checkpoint['epi_i']
 		count_accuracy, avg_accuracy = checkpoint['count_accuracy'], checkpoint['avg_accuracy']
 		total_architectures = checkpoint['total_architectures']
+		best_accuracy = 0
+		if 'best_accuracy' in checkpoint:
+			best_accuracy = checkpoint['best_accuracy']
 
 		print('Finished loading model and optimizer from {}'.format(model_name))
 
 	else:
 		print('File {} not found.'.format(model_name))
 		raise FileNotFoundError
-	return replay_tree, REINFORCE_policy_net, optimizer, epi_i, count_accuracy, avg_accuracy, total_architectures
+	return replay_tree, REINFORCE_policy_net, optimizer, epi_i, count_accuracy, avg_accuracy, \
+				total_architectures, best_accuracy
 
 

@@ -163,8 +163,9 @@ if __name__ == '__main__':
 
 		start_epi = 1
 		if args.load_model:
-			replay_tree, REINFORCE_policy_net, optimizer, epi_i, count_accuracy, avg_accuracy, total_architectures = \
+			replay_tree, REINFORCE_policy_net, optimizer, start_epi, count_accuracy, avg_accuracy, total_architectures, best_accuracy= \
 				load_reinforce_model(args.load_model)
+			start_epi += 1
 
 		else:
 			REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
@@ -279,7 +280,7 @@ if __name__ == '__main__':
 
 			curr_node = replay_tree
 
-			if (epi_i+1) % args.save_freq == 0:
+			if (epi_i) % args.save_freq == 0:
 				save_checkpoint({'args': args,
 								 'state_dict': REINFORCE_policy_net.state_dict(),
 								 'optimizer': optimizer.state_dict(),
@@ -287,6 +288,7 @@ if __name__ == '__main__':
 								 'epi_i': epi_i,
 								 'count_accuracy': count_accuracy,
 								 'avg_accuracy': avg_accuracy,
-								 'total_architectures': total_architectures},
-								  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
+								 'total_architectures': total_architectures,
+								 'best_accuracy': best_accuracy},
+								  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i)))
 
