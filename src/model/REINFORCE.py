@@ -36,7 +36,7 @@ class Policy(nn.Module):
         m = Categorical(probs)
         action = m.sample()
         self.saved_log_probs.append(m.log_prob(action))
-        return action.data[0]
+        return probs, action.data[0]
 
     def finish_episode(self, baseline):
 
@@ -54,7 +54,6 @@ class Policy(nn.Module):
             policy_loss.append(-log_prob * (reward-baseline))
         policy_loss = torch.cat(policy_loss).sum()
 
-        del self.rewards[:]
-        del self.saved_log_probs[:]
+        del self.rewards, self.saved_log_probs, rewards
         self.reset()
         return policy_loss

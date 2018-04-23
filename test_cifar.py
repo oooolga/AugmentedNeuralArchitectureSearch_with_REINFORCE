@@ -96,7 +96,7 @@ def train_cifar(net, optimizer, train_loader, valid_loader, test_loader=None, nu
 		best_accuracy = valid_accuracy
 		save_checkpoint({'state_dict': net.state_dict(),
 						 'optimizer': optimizer.state_dict()},
-						  os.path.join(model_dir, model_name+'final.pt'))
+						  os.path.join(model_dir, model_name+'.pt'))
 		return valid_accuracy, test_accuracy
 	else:
 		del net

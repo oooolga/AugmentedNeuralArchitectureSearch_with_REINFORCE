@@ -3,6 +3,8 @@ import torch.optim as optim
 
 import os
 from ..model.build_model import Network
+from ..model.layers import NUM_LAYERS_TYPE
+from ..model.REINFORCE import Policy
 
 def displayModelSetting(layer_list):
 	print('|\t\t\tLayers: {')
@@ -36,3 +38,30 @@ def load_checkpoint(model_name, w_in=32, h_in=32, c_in=3, out_dim=10):
 		print('File {} not found.'.format(model_name))
 		raise FileNotFoundError
 	return layer_list, net, optimizer
+
+
+def load_reinforce_model(model_name):
+	if model_name and os.path.isfile(model_name):
+		checkpoint = torch.load(model_name)
+		args = checkpoint['args']
+
+		REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
+		if torch.cuda.is_available():
+			REINFORCE_policy_net = net.cuda()
+
+		optimizer = optim.Adam(params=REINFORCE_policy_net.parameters(), lr=1e-4)
+
+		REINFORCE_policy_net.load_state_dict(checkpoint['state_dict'])
+		optimizer.load_state_dict(checkpoint['optimizer'])
+
+		replay_tree = checkpoint['replay_tree']
+		epi_i = checkpoint['epi_i']
+
+		print('Finished loading model and optimizer from {}'.format(model_name))
+
+	else:
+		print('File {} not found.'.format(model_name))
+		raise FileNotFoundError
+	return replay_tree, REINFORCE_policy_net, optimizer, epi_i
+
+

@@ -9,13 +9,21 @@ import numpy as np
 from numpy.random import random_sample
 
 from src.util.load_data import load_cifar10_data
-from src.util.util import displayModelSetting, save_checkpoint
+from src.util.util import displayModelSetting, save_checkpoint, load_reinforce_model
 from src.model.build_model import Network
 from src.model.REINFORCE import Policy
 from src.model.layers import LAYERS_TYPE, NUM_LAYERS_TYPE
 from src.model.experience_replay import getExperienceTree, TreeNode
 
 use_cuda = torch.cuda.is_available()
+if not use_cuda:
+	raise NotImplementedError
+
+available_devices = []
+if use_cuda:
+	torch.cuda.empty_cache()
+	available_devices  = list(range(torch.cuda.device_count()))
+
 print('USE CUDA: {}'.format(use_cuda))
 replay_tree = getExperienceTree()
 curr_node = replay_tree
@@ -23,13 +31,15 @@ curr_node = replay_tree
 global best_accuracy
 best_accuracy = 0
 total_architectures = 0
+avg_accuracy = 0
+count_accuracy = 0
 
 def parse():
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--batch-size', default=128, type=int,
 						help='Mini-batch size')
-	parser.add_argument('--max-layers', default=15, type=int,
+	parser.add_argument('--max-layers', default=8, type=int,
 						help='Max number of layers')
 	parser.add_argument('--alpha', default=0.7, type=float, help='Alpha')
 	parser.add_argument('--gamma', default=1.0, type=float, help='Discounting factor (gamma)')
@@ -39,7 +49,8 @@ def parse():
 	parser.add_argument('--model-dir', default='./saved_model', type=str, help='Directory for saved models')
 	parser.add_argument('--model-name', default='cifar10_', type=str, help='Model name')
 	parser.add_argument('--check-memory', action='store_true', help='Flag for check memory leak')
-	parser.add_argument('--save-freq', default=10, type=int, help='Save frequency')
+	parser.add_argument('--save-freq', default=1, type=int, help='Save frequency')
+	parser.add_argument('--load-model', default=None, type=str, help='Path for load model')
 
 	args = parser.parse_args()
 	return args
@@ -78,6 +89,7 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 					total_batch += 1
 
 				print('|\t\t\t\tAverage loss={:.4f}'.format(total_loss/float(total_batch)))
+				del data, target, pred, loss, total_loss
 
 
 		def eval(net, data_loader):
@@ -87,19 +99,22 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			total_data, total_batch = 0, 0
 
 			for batch_idx, (data, target) in enumerate(data_loader):
-				if use_cuda:
-					data, target = data.cuda(), target.cuda()
-
-				data, target = Variable(data, requires_grad=False), \
-						   Variable(target, requires_grad=False)
-
 				with torch.no_grad(): # prevent memory leak
+					if use_cuda:
+						data, target = data.cuda(), target.cuda()
+
+					data, target = Variable(data, requires_grad=False), \
+							   Variable(target, requires_grad=False)
+
 					pred = net(data)
 					_, predicted = torch.max(pred.data, 1)
 					correct += (predicted == target.data).sum()
 					total_data += len(data)
 
+				del data, target, pred, predicted
+
 			accuracy = correct.cpu().numpy() / float(total_data)
+			del correct
 
 			return accuracy
 
@@ -144,32 +159,37 @@ if __name__ == '__main__':
 															  test_batch_size=args.batch_size,
 															  alpha=args.alpha)
 
-	REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
-	if use_cuda:
-		REINFORCE_policy_net.cuda()
-	optimizer = optim.Adam(params=REINFORCE_policy_net.parameters(), lr=args.learning_rate)
+	start_epi = 1
+	if args.load_model:
+		replay_tree, REINFORCE_policy_net, optimizer, start_epi = load_reinforce_model(args.load_model)
 
-	start_state = Variable(torch.zeros(1, NUM_LAYERS_TYPE), requires_grad=False)
-	if use_cuda:
-		start_state = start_state.cuda()
+	else:
+		REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
+		if use_cuda:
+			REINFORCE_policy_net.cuda()
+		optimizer = optim.Adam(params=REINFORCE_policy_net.parameters(), lr=args.learning_rate)
 
 	all_accuracy = []
 	global model_dir, model_name
 	model_dir = args.model_dir
 	model_name = args.model_name
 
-	for epi_i in range(1, args.num_episodes+1):
+	for epi_i in range(start_epi, args.num_episodes+start_epi):
 		print('|\tEpisode #{}:'.format(epi_i))
 
 		if args.check_memory:
 			pid = os.getpid()
 			prev_mem = 0
 
+		new_action_state = Variable(torch.zeros(1, NUM_LAYERS_TYPE), requires_grad=False)
+		if use_cuda:
+			new_action_state = new_action_state.cuda()
+
 		layer_list = []
 		for layer_i in range(args.max_layers-1):
 			total_architectures += 1
 			print('|\t\tArchitecture #{} ({}):'.format(total_architectures, layer_i+1))
-			new_action = REINFORCE_policy_net.select_action(start_state)
+			new_action_state, new_action = REINFORCE_policy_net.select_action(new_action_state)
 
 			if new_action == NUM_LAYERS_TYPE-1:
 				if layer_i == 0:
@@ -178,6 +198,13 @@ if __name__ == '__main__':
 														args.learning_rate)
 					print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
 					REINFORCE_policy_net.rewards.append(reward)
+					if count_accuracy == 0:
+						avg_accuracy = reward 
+						count_accuracy += 1
+					else:
+						count_accuracy += 1
+						avg_accuracy = 1/float(count_accuracy)*reward +\
+									   float(count_accuracy-1)/float(count_accuracy)*avg_accuracy
 				break
 
 			layer_list.append(LAYERS_TYPE[new_action])
@@ -199,6 +226,15 @@ if __name__ == '__main__':
 				else:					
 					reward1, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
 													args.learning_rate)
+
+					if count_accuracy == 0:
+						avg_accuracy = reward1
+						count_accuracy += 1
+					else:
+						count_accuracy += 1
+						avg_accuracy = 1/float(count_accuracy)*reward1 +\
+									   float(count_accuracy-1)/float(count_accuracy)*avg_accuracy
+
 					curr_node.add_count()
 					reward = 1/float(curr_node.get_count())*reward1 + \
 						float(curr_node.get_count()-1)/float(curr_node.get_count())*reward0
@@ -207,6 +243,13 @@ if __name__ == '__main__':
 			else:
 				reward, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
 													 args.learning_rate)
+				if count_accuracy == 0:
+					avg_accuracy = reward 
+					count_accuracy += 1
+				else:
+					count_accuracy += 1
+					avg_accuracy = 1/float(count_accuracy)*reward +\
+								   float(count_accuracy-1)/float(count_accuracy)*avg_accuracy
 
 				new_experience_node = TreeNode(new_action, reward)
 				curr_node.add_child(new_experience_node)
@@ -227,9 +270,11 @@ if __name__ == '__main__':
 				break
 
 		optimizer.zero_grad()
-		model_loss = REINFORCE_policy_net.finish_episode(0)
+		model_loss = REINFORCE_policy_net.finish_episode(avg_accuracy)
 		model_loss.backward()
 		optimizer.step()
+
+		del model_loss
 
 		curr_node = replay_tree
 
@@ -237,6 +282,7 @@ if __name__ == '__main__':
 			save_checkpoint({'args': args,
 							 'state_dict': REINFORCE_policy_net.state_dict(),
 							 'optimizer': optimizer.state_dict(),
-							 'replay_tree': replay_tree},
+							 'replay_tree': replay_tree,
+							 'epi_i': epi_i},
 							  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
 
