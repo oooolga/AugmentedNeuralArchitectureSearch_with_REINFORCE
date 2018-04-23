@@ -22,6 +22,7 @@ curr_node = replay_tree
 
 global best_accuracy
 best_accuracy = 0
+total_architectures = 0
 
 def parse():
 	parser = argparse.ArgumentParser()
@@ -31,7 +32,7 @@ def parse():
 	parser.add_argument('--max-layers', default=15, type=int,
 						help='Max number of layers')
 	parser.add_argument('--alpha', default=0.7, type=float, help='Alpha')
-	parser.add_argument('--gamma', default=0.8, type=float, help='Discounting factor (gamma)')
+	parser.add_argument('--gamma', default=1.0, type=float, help='Discounting factor (gamma)')
 	parser.add_argument('-lr', '--learning_rate', default=1e-4, type=float,
 						help='Learning rate')
 	parser.add_argument('--num-episodes', default=200, type=int, help='Number of episodes')
@@ -166,7 +167,8 @@ if __name__ == '__main__':
 
 		layer_list = []
 		for layer_i in range(args.max_layers-1):
-			print('|\t\tArchitecture #{}:'.format(layer_i+1))
+			total_architectures += 1
+			print('|\t\tArchitecture #{} ({}):'.format(total_architectures, layer_i+1))
 			new_action = REINFORCE_policy_net.select_action(start_state)
 
 			if new_action == NUM_LAYERS_TYPE-1:
@@ -211,6 +213,8 @@ if __name__ == '__main__':
 				curr_node = new_experience_node
 
 			print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
+			if REINFORCE_policy_net.rewards:
+				REINFORCE_policy_net.rewards[-1] = 0.0
 			REINFORCE_policy_net.rewards.append(reward)
 
 			if args.check_memory:
@@ -232,7 +236,7 @@ if __name__ == '__main__':
 		if (epi_i+1) % args.save_freq == 0:
 			save_checkpoint({'args': args,
 							 'state_dict': REINFORCE_policy_net.state_dict(),
-							 'optimizer': optimizer.state_dict()},
+							 'optimizer': optimizer.state_dict(),
+							 'replay_tree': replay_tree},
 							  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
-
 
