@@ -216,7 +216,7 @@ if __name__ == '__main__':
 				curr_node = curr_node.get_child(new_action)
 				reward0 = curr_node.get_value()
 		
-				if reward0 == 0.0 or tmp > 0.2:
+				if reward0 == 0.0 or tmp > 0.1:
 					# REPLAY!
 					print('|\t\t\tExperience Replay')
 					reward = reward0
@@ -256,8 +256,6 @@ if __name__ == '__main__':
 				curr_node = new_experience_node
 
 			print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
-			if REINFORCE_policy_net.rewards:
-				REINFORCE_policy_net.rewards[-1] = 0.0
 			REINFORCE_policy_net.rewards.append(reward)
 
 			if args.check_memory:
