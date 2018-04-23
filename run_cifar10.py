@@ -161,7 +161,8 @@ if __name__ == '__main__':
 
 	start_epi = 1
 	if args.load_model:
-		replay_tree, REINFORCE_policy_net, optimizer, start_epi = load_reinforce_model(args.load_model)
+		replay_tree, REINFORCE_policy_net, optimizer, epi_i, count_accuracy, avg_accuracy, total_architectures = \
+			load_reinforce_model(args.load_model)
 
 	else:
 		REINFORCE_policy_net = Policy(NUM_LAYERS_TYPE, 32, args.gamma)
@@ -283,6 +284,9 @@ if __name__ == '__main__':
 							 'state_dict': REINFORCE_policy_net.state_dict(),
 							 'optimizer': optimizer.state_dict(),
 							 'replay_tree': replay_tree,
-							 'epi_i': epi_i},
+							 'epi_i': epi_i,
+							 'count_accuracy': count_accuracy,
+							 'avg_accuracy': avg_accuracy,
+							 'total_architectures': total_architectures},
 							  os.path.join(model_dir, model_name+'reinforce_{}.pt'.format(epi_i+1)))
 
