@@ -1,4 +1,6 @@
 import torch
+import torch.optim as optim
+
 import os
 from ..model.build_model import Network
 
@@ -20,6 +22,9 @@ def load_checkpoint(model_name, w_in=32, h_in=32, c_in=3, out_dim=10):
 
 		net = Network(layer_list=layer_list,
 					  w_in=w_in, h_in=h_in, c_in=c_in, out_dim=out_dim)
+
+		if torch.cuda.is_available():
+			net = net.cuda()
 		optimizer = optim.Adam(params=net.parameters(), lr=1e-4)
 
 		net.load_state_dict(checkpoint['state_dict'])

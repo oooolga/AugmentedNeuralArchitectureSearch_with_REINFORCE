@@ -12,6 +12,7 @@ class Network(nn.Module):
 		self.layer_list = layer_list
 		self.out_dim = out_dim
 		self.build_model(w_in, h_in, c_in)
+		self.loss = nn.NLLLoss()
 
 	def build_model(self, w_in, h_in, c_in):
 
@@ -49,5 +50,5 @@ class Network(nn.Module):
 		x = x.view(-1, self.out_in_dim)
 		return self.out_layer(x)
 
-	def loss(self, out, target):
-		return F.nll_loss(out, target)
+	def compute_loss(self, out, target):
+		return self.loss(out, target)

@@ -109,7 +109,7 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			best_accuracy = valid_accuracy
 			save_checkpoint({'layer_list': layer_list, 'state_dict': net.state_dict(),
 							  'optimizer': optimizer.state_dict()},
-							  os.path.join(model_dir, model_name+'best.pt'))
+							  os.path.join(model_dir, model_name+'reinforce_best.pt'))
 			del net
 			del optimizer
 			return valid_accuracy, test_accuracy, None
