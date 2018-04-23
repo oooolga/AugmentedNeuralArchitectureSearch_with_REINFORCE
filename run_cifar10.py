@@ -5,15 +5,20 @@ from torchvision import datasets, transforms
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import argparse, pdb, os, copy
+import numpy as np
+from numpy.random import random_sample
 
 from src.util.load_data import load_cifar10_data
 from src.util.util import displayModelSetting, save_checkpoint
 from src.model.build_model import Network
 from src.model.REINFORCE import Policy
 from src.model.layers import LAYERS_TYPE, NUM_LAYERS_TYPE
+from src.model.experience_replay import getExperienceTree, TreeNode
 
 use_cuda = torch.cuda.is_available()
 print('USE CUDA: {}'.format(use_cuda))
+replay_tree = getExperienceTree()
+curr_node = replay_tree
 
 global best_accuracy
 best_accuracy = 0
@@ -163,6 +168,7 @@ if __name__ == '__main__':
 		for layer_i in range(args.max_layers-1):
 			print('|\t\tArchitecture #{}:'.format(layer_i+1))
 			new_action = REINFORCE_policy_net.select_action(start_state)
+
 			if new_action == NUM_LAYERS_TYPE-1:
 				if layer_i == 0:
 					displayModelSetting([])
@@ -174,8 +180,36 @@ if __name__ == '__main__':
 
 			layer_list.append(LAYERS_TYPE[new_action])
 			displayModelSetting(layer_list)
-			reward, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
-												 args.learning_rate)
+
+			## Expeerience Replay
+			if curr_node.check_child_exist(new_action):
+				tmp = random_sample()
+				curr_node = curr_node.get_child(new_action)
+				reward0 = curr_node.get_value()
+		
+				if reward0 == 0.0 or tmp > 0.2:
+					# REPLAY!
+					print('|\t\t\tExperience Replay')
+					reward = reward0
+					failed = False
+					if reward == 0:
+						failed = True
+				else:					
+					reward1, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
+													args.learning_rate)
+					curr_node.add_count()
+					reward = 1/float(curr_node.get_count())*reward1 + \
+						float(curr_node.get_count()-1)/float(curr_node.get_count())*reward0
+
+					curr_node.update_value(reward)
+			else:
+				reward, _, failed =  cifar_env(layer_list, train_loader, valid_loader,
+													 args.learning_rate)
+
+				new_experience_node = TreeNode(new_action, reward)
+				curr_node.add_child(new_experience_node)
+				curr_node = new_experience_node
+
 			print('|\t\t\tValidation accuracy={:.4f}'.format(reward))
 			REINFORCE_policy_net.rewards.append(reward)
 
@@ -192,6 +226,8 @@ if __name__ == '__main__':
 		model_loss = REINFORCE_policy_net.finish_episode(0)
 		model_loss.backward()
 		optimizer.step()
+
+		curr_node = replay_tree
 
 		if (epi_i+1) % args.save_freq == 0:
 			save_checkpoint({'args': args,
