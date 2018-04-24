@@ -17,6 +17,7 @@ if __name__ == '__main__':
 	args = parse()
 
 	replay_tree, _, _, _, _, _, _, _ = load_reinforce_model(args.load_model)
+
 	recursivePrintTree(replay_tree)
 
 	for layer_idx, layer_t in enumerate(LAYERS_TYPE):
