@@ -59,3 +59,6 @@ usage: print_experience_tree.py [-h] --load-model LOAD_MODEL
 ## Reference
 * *Neural Architecture Search with Reinforcement Learning* [[arxiv](https://arxiv.org/pdf/1611.01578.pdf)]
 * *Convolutional Neural Network Architecture Seach with Q-Learning* [[paper](http://cs231n.stanford.edu/reports/2017/pdfs/528.pdf)]
+
+## Acknowledgements
+Special thanks to the authors in [https://github.com/pytorch/examples/blob/master/reinforcement_learning/reinforce.py ] for their REINFORCE implementation and the authors in [https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/02-intermediate/deep_residual_network/main.py ] for their residual block implementation. I have used some parts of their implementation.
