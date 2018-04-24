@@ -5,6 +5,9 @@ Olga (Geya) Xu, 260520542
 
 geya.xu@mail.mcgill.ca
 
+## Model Description
+![model_description](model_description.png)
+
 ## Dependencies
 * numpy==1.14.2
 * torch.egg==info
