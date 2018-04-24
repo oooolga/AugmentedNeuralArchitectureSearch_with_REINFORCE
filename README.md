@@ -1,4 +1,4 @@
-# COMP767 Project: Neural Architecture Search with Reinforcement Learning
+# COMP767 Project: Augmented Neural Architecture Search with REINFORCE
 
 ## Contact Information
 Olga (Geya) Xu, 260520542
