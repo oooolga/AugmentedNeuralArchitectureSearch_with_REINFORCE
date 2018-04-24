@@ -19,7 +19,7 @@ def save_checkpoint(state, model_name):
 
 def load_checkpoint(model_name, w_in=32, h_in=32, c_in=3, out_dim=10):
 	if model_name and os.path.isfile(model_name):
-		checkpoint = torch.load(model_name)
+		checkpoint = torch.load(model_name, map_location={'cuda:1' : 'cuda:0'})
 		layer_list = checkpoint['layer_list']
 
 		net = Network(layer_list=layer_list,

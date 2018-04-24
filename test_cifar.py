@@ -24,12 +24,10 @@ def parse():
 
 	parser.add_argument('--batch-size', default=128, type=int,
 						help='Mini-batch size')
-	parser.add_argument('--max-layers', default=15, type=int,
-						help='Max number of layers')
 	parser.add_argument('--alpha', default=0.7, type=float, help='Alpha')
 	parser.add_argument('-lr', '--learning_rate', default=1e-4, type=float,
 						help='Learning rate')
-	parser.add_argument('--num-epochs', default=200, type=int, help='Number of epochs')
+	parser.add_argument('--num-epochs', default=100, type=int, help='Number of epochs')
 	parser.add_argument('--model-dir', default='./saved_model', type=str, help='Directory for saved models')
 	parser.add_argument('--model-name', default='cifar10_final', type=str, help='Model name')
 	parser.add_argument('--load-path', default='./saved_model/cifar10_reinforce_best.pt', type=str)
@@ -39,7 +37,7 @@ def parse():
 
 def train_cifar(net, optimizer, train_loader, valid_loader, test_loader=None, num_epochs=200):
 
-		def train(net, optimizer, train_loader, num_epochs):
+	def train(net, optimizer, train_loader, num_epochs):
 		net.train()
 
 		for epoch_i in range(num_epochs):

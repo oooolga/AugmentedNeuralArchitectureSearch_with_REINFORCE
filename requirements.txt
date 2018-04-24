@@ -1,0 +1,4 @@
+numpy==1.14.2
+torch.egg==info
+torchvision==0.2.0
+torch==0.4.0a0+6a41e2d

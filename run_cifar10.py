@@ -70,7 +70,7 @@ def cifar_env(layer_list, train_loader, valid_loader, learning_rate,
 			def train(net, optimizer, train_loader):
 				net.train()
 
-				for epoch_i in range(15):
+				for epoch_i in range(25):
 					print('|\t\t\tTrain epoch {}:'.format(epoch_i+1))
 					total_loss = 0
 					total_batch = 0
